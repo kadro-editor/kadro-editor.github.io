@@ -1,0 +1,35 @@
+# Сайт Kadro: берёт папку site/ из открытого репозитория honeyjostar/kadro и публикует её на kadro-editor.github.io.
+# Обновляется сам каждые 3 часа и по кнопке Actions → Deploy → Run workflow.
+name: Deploy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */3 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Папка site/ из репозитория Kadro
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/honeyjostar/kadro src
+          cd src && git sparse-checkout set site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: src/site
+      - id: deployment
+        uses: actions/deploy-pages@v4
